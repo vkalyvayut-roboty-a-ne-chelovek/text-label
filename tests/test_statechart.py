@@ -49,7 +49,7 @@ class TestStatechart(unittest.TestCase):
 
         self._assert_trace_check(expected_trace, actual_trace)
 
-        assert self.statechart.project.categories == []
+        assert self.statechart.project.categories == {}
         assert self.statechart.project.data == []
 
     def test_load_project_event(self):
@@ -64,8 +64,8 @@ class TestStatechart(unittest.TestCase):
 
         self._assert_trace_check(expected_trace, actual_trace)
 
-        assert self.statechart.project.categories == ['cat1', 'cat2']
-        assert self.statechart.project.data == [['text1', 0], ['text2'], ['text3', 1]]
+        assert self.statechart.project.categories == {0: 'cat1', 1: 'cat2'}
+        assert self.statechart.project.data == [TextInfo('text1', category_id=0), TextInfo('text2'), TextInfo('text3', 1)]
 
     def test_add_category_event(self):
         self.statechart.launch_new_project_event()
@@ -80,19 +80,19 @@ class TestStatechart(unittest.TestCase):
 
         self._assert_spy_check(expected_spy, actual_spy)
 
-        assert self.statechart.project.categories == ['cat1', 'cat2']
+        assert self.statechart.project.categories == {0: 'cat1', 1: 'cat2'}
 
     def test_import_text_from_input_event(self):
         self.statechart.launch_new_project_event()
         self.statechart.launch_import_text_from_input('text1')
         time.sleep(0.1)
 
-        expected_spy = ['START', 'SEARCH_FOR_SUPER_SIGNAL:init', 'ENTRY_SIGNAL:init', 'INIT_SIGNAL:init', '<- Queued:(0) Deferred:(0)', 'NEW_PROJECT:init', 'SEARCH_FOR_SUPER_SIGNAL:in_project', 'ENTRY_SIGNAL:in_project', 'INIT_SIGNAL:in_project', '<- Queued:(2) Deferred:(0)', 'ADD_CATEGORY:in_project', 'ADD_CATEGORY:in_project:HOOK', '<- Queued:(1) Deferred:(0)', 'IMPORT_TEXT_FROM_INPUT:in_project', 'IMPORT_TEXT_FROM_INPUT:in_project:HOOK', '<- Queued:(0) Deferred:(0)']
+        expected_spy = ['START', 'SEARCH_FOR_SUPER_SIGNAL:init', 'ENTRY_SIGNAL:init', 'INIT_SIGNAL:init', '<- Queued:(0) Deferred:(0)', 'NEW_PROJECT:init', 'SEARCH_FOR_SUPER_SIGNAL:in_project', 'ENTRY_SIGNAL:in_project', 'INIT_SIGNAL:in_project', '<- Queued:(1) Deferred:(0)', 'IMPORT_TEXT_FROM_INPUT:in_project', 'IMPORT_TEXT_FROM_INPUT:in_project:HOOK', '<- Queued:(0) Deferred:(0)']
         actual_spy = self.statechart.spy()
 
         self._assert_spy_check(expected_spy, actual_spy)
 
-        assert self.statechart.project.data == [['text1', None]]
+        assert self.statechart.project.data == [TextInfo('text1')]
 
     def test_import_text_from_file_event(self):
         self.statechart.launch_new_project_event()
@@ -104,7 +104,7 @@ class TestStatechart(unittest.TestCase):
 
         self._assert_spy_check(expected_spy, actual_spy)
 
-        assert self.statechart.project.data == [['text2', None]]
+        assert self.statechart.project.data == [TextInfo('text2', None)]
 
     def test_mark_text_event(self):
         self.statechart.launch_load_project_event(path_to_project=self.path_to_project)
@@ -116,8 +116,8 @@ class TestStatechart(unittest.TestCase):
 
         self._assert_spy_check(expected_spy, actual_spy)
 
-        assert self.statechart.project.categories == ['cat1', 'cat2']
-        assert self.statechart.project.data == [['text1', 0], ['text2', 1], ['text3', 1]]
+        assert self.statechart.project.categories == {0: 'cat1', 1: 'cat2'}
+        assert self.statechart.project.data == [TextInfo('text1', category_id=0), TextInfo('text2', category_id=1), TextInfo('text3', category_id=1)]
 
 
 if __name__ == '__main__':

@@ -1,12 +1,14 @@
 from collections import namedtuple
+from dataclasses import dataclass
 import json
 import pathlib
+from typing import Optional, Union
 
 from miros import ActiveObject
 from miros import return_status, signals, Event
 from miros import spy_on
 
-from typing import Optional
+
 
 class Bus:
     def __init__(self):
@@ -31,10 +33,25 @@ class Gui:
         pass
 
 
+@dataclass
+class TextInfo:
+    text: str
+    category_id: Optional[int] = None
+
+
 class Project:
-    def __init__(self, categories: Optional[list] = (), data: Optional[list] = ()):
-        self.categories: list = list(categories)
-        self.data: list = list(data)
+    def __init__(self, categories: Optional[dict[int, str]] = None, data: Optional[list] = ()):
+        self.categories: dict[int, str] = self._make_categories_from_raw(categories if categories else {})
+        self.data: list[TextInfo] = self._make_data_from_raw(data)
+
+    @staticmethod
+    def _make_categories_from_raw(categories: dict[Union[str, int]]) -> dict[int, str]:
+        return {int(k): str(v) for k, v in categories.items()}
+
+    @staticmethod
+    def _make_data_from_raw(data: list) -> list[TextInfo]:
+        return [TextInfo(text=text_info[0], category_id=text_info[1]) if len(text_info) == 2 else TextInfo(text=text_info[0])
+                for text_info in list(data)]
 
     @staticmethod
     def load_project_from_path(path_to_project: pathlib.Path):
@@ -43,14 +60,27 @@ class Project:
             return Project(categories=raw['categories'], data=raw['data'])
 
     def add_category(self, category: str):
-        if category not in self.categories:
-            self.categories.append(category)
+        if category not in self.categories.values():
+            next_id = list(self.categories.keys())[-1]+1 if self.categories else 0
+            self.categories[next_id] = category
+
+    def remove_category(self, category_id: int):
+        self.categories.pop(category_id)
+        for text_id, text_info in enumerate(self.data):
+            if text_info.category_id == category_id:
+                self.data[text_id].category_id = None
 
     def add_text(self, text: str):
-        self.data.append([text, None])
+        self.data.append(TextInfo(text=text))
+
+    def remove_text(self, text_id: int):
+        self.data.pop(text_id)
 
     def mark_text(self, text_id: int, category_id: int):
-        self.data[text_id][1] = category_id
+        self.data[text_id].category_id = category_id
+
+    def get_texts(self) -> list[TextInfo]:
+        return self.data
 
 
 class Statechart(ActiveObject):
@@ -80,7 +110,7 @@ class Statechart(ActiveObject):
             self.project.add_text(text_handle.read())
 
     def on_mark_text_in_in_project(self, text_id: int, category_id: int):
-        pass
+        self.project.mark_text(text_id=text_id, category_id=category_id)
 
     def launch_new_project_event(self):
         self.post_fifo(Event(signal=signals.NEW_PROJECT))
@@ -139,6 +169,7 @@ def in_project(s: Statechart, e: Event) -> return_status:
         s.on_import_text_from_file_in_in_project(e.payload)
     elif e.signal == signals.MARK_TEXT:
         status = return_status.HANDLED
+        s.on_mark_text_in_in_project(text_id=e.payload[0], category_id=e.payload[1])
     else:
         status = return_status.SUPER
         s.temp.fun = init
