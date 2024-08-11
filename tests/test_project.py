@@ -38,5 +38,13 @@ class TestProject(unittest.TestCase):
 
         assert project.data == [['text1', None]]
 
+    def test_mark_text(self):
+        project = Project()
+        project.add_category('cat1')
+        project.add_text('text1')
+        project.mark_text(0, 0)
+
+        assert project.data == [['text1', 0]]
+
 if __name__ == '__main__':
     unittest.main()

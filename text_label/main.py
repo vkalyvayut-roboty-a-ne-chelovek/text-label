@@ -49,6 +49,9 @@ class Project:
     def add_text(self, text: str):
         self.data.append([text, None])
 
+    def mark_text(self, text_id: int, category_id: int):
+        self.data[text_id][1] = category_id
+
 
 class Statechart(ActiveObject):
     def __init__(self, name: str, bus):
@@ -76,6 +79,9 @@ class Statechart(ActiveObject):
         with open(path_to_file, mode='r', encoding='utf-8') as text_handle:
             self.project.add_text(text_handle.read())
 
+    def on_mark_text_in_in_project(self, text_id: int, category_id: int):
+        pass
+
     def launch_new_project_event(self):
         self.post_fifo(Event(signal=signals.NEW_PROJECT))
 
@@ -90,6 +96,9 @@ class Statechart(ActiveObject):
 
     def launch_import_text_from_file(self, path_to_file: pathlib.Path):
         self.post_fifo(Event(signal=signals.IMPORT_TEXT_FROM_FILE, payload=path_to_file))
+
+    def launch_mark_text_event(self, text_id: int, category_id):
+        self.post_fifo(Event(signal=signals.MARK_TEXT, payload=(text_id, category_id)))
 
 
 @spy_on
@@ -128,6 +137,8 @@ def in_project(s: Statechart, e: Event) -> return_status:
     elif e.signal == signals.IMPORT_TEXT_FROM_FILE:
         status = return_status.HANDLED
         s.on_import_text_from_file_in_in_project(e.payload)
+    elif e.signal == signals.MARK_TEXT:
+        status = return_status.HANDLED
     else:
         status = return_status.SUPER
         s.temp.fun = init

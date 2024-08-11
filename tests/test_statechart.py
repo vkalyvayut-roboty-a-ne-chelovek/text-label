@@ -62,6 +62,8 @@ class TestStatechart(unittest.TestCase):
         '''
         actual_trace = self.statechart.trace()
 
+        self._assert_trace_check(expected_trace, actual_trace)
+
         assert self.statechart.project.categories == ['cat1', 'cat2']
         assert self.statechart.project.data == [['text1', 0], ['text2'], ['text3', 1]]
 
@@ -103,6 +105,19 @@ class TestStatechart(unittest.TestCase):
         self._assert_spy_check(expected_spy, actual_spy)
 
         assert self.statechart.project.data == [['text2', None]]
+
+    def test_mark_text_event(self):
+        self.statechart.launch_load_project_event(path_to_project=self.path_to_project)
+        self.statechart.launch_mark_text_event(text_id=1, category_id=1)
+        time.sleep(0.1)
+
+        expected_spy = ['START', 'SEARCH_FOR_SUPER_SIGNAL:init', 'ENTRY_SIGNAL:init', 'INIT_SIGNAL:init', '<- Queued:(0) Deferred:(0)', 'LOAD_PROJECT:init', 'SEARCH_FOR_SUPER_SIGNAL:in_project', 'ENTRY_SIGNAL:in_project', 'INIT_SIGNAL:in_project', '<- Queued:(1) Deferred:(0)', 'MARK_TEXT:in_project', 'MARK_TEXT:in_project:HOOK', '<- Queued:(0) Deferred:(0)']
+        actual_spy = self.statechart.spy()
+
+        self._assert_spy_check(expected_spy, actual_spy)
+
+        assert self.statechart.project.categories == ['cat1', 'cat2']
+        assert self.statechart.project.data == [['text1', 0], ['text2', 1], ['text3', 1]]
 
 
 if __name__ == '__main__':
