@@ -59,6 +59,11 @@ class Project:
             raw = json.loads(project_handle.read())
             return Project(categories=raw['categories'], data=raw['data'])
 
+    def save_project(self, path_to_project: pathlib.Path):
+        with open(path_to_project, mode='w', encoding='utf-8') as project_handle:
+            raw = {"version": 0, "categories": self.categories, "data": [[text_info.text, text_info.category_id] for text_info in self.data]}
+            project_handle.write(json.dumps(raw))
+
     def add_category(self, category: str):
         if category not in self.categories.values():
             next_id = list(self.categories.keys())[-1]+1 if self.categories else 0
@@ -112,6 +117,9 @@ class Statechart(ActiveObject):
     def on_mark_text_in_in_project(self, text_id: int, category_id: int):
         self.project.mark_text(text_id=text_id, category_id=category_id)
 
+    def on_save_project_in_in_project(self, path_to_project: pathlib.Path):
+        self.project.save_project(path_to_project)
+
     def launch_new_project_event(self):
         self.post_fifo(Event(signal=signals.NEW_PROJECT))
 
@@ -129,6 +137,9 @@ class Statechart(ActiveObject):
 
     def launch_mark_text_event(self, text_id: int, category_id):
         self.post_fifo(Event(signal=signals.MARK_TEXT, payload=(text_id, category_id)))
+
+    def launch_save_project_event(self, path_to_project: pathlib.Path):
+        self.post_fifo(Event(signal=signals.SAVE_PROJECT, payload=path_to_project))
 
 
 @spy_on
@@ -170,6 +181,9 @@ def in_project(s: Statechart, e: Event) -> return_status:
     elif e.signal == signals.MARK_TEXT:
         status = return_status.HANDLED
         s.on_mark_text_in_in_project(text_id=e.payload[0], category_id=e.payload[1])
+    elif e.signal == signals.SAVE_PROJECT:
+        status = return_status.HANDLED
+        s.on_save_project_in_in_project(e.payload)
     else:
         status = return_status.SUPER
         s.temp.fun = init

@@ -1,4 +1,5 @@
 import copy
+import tempfile
 import unittest
 import pathlib
 import os.path
@@ -79,6 +80,32 @@ class TestProject(unittest.TestCase):
         project.add_text('text3')
 
         assert project.get_texts() == [TextInfo('text1'), TextInfo('text2'), TextInfo('text3')]
+
+    def test_save_project(self):
+        path_to_project = pathlib.Path(os.path.dirname(__file__), 'assets', 'test.text-label-project')
+        project = Project.load_project_from_path(path_to_project)
+        project.add_text('text4')
+        project.add_text('text5')
+
+        expected_data = [TextInfo('text1', category_id=0),
+                                TextInfo('text2'),
+                                TextInfo('text3', category_id=1),
+                                TextInfo('text4'),
+                                TextInfo('text5')]
+
+        assert project.data == expected_data
+
+        path_to_temp_project_file = tempfile.mktemp()
+        project.save_project(path_to_temp_project_file)
+
+        assert os.path.exists(path_to_temp_project_file)
+
+        project = Project.load_project_from_path(path_to_project)
+        project.add_text('text5')
+
+        project = Project.load_project_from_path(path_to_temp_project_file)
+
+        assert project.data == expected_data
 
 
 if __name__ == '__main__':

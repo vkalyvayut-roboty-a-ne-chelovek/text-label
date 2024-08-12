@@ -2,6 +2,7 @@ import os.path
 import pathlib
 import time
 import unittest
+import tempfile
 from text_label.main import *
 from miros import stripped
 
@@ -115,6 +116,34 @@ class TestStatechart(unittest.TestCase):
         actual_spy = self.statechart.spy()
 
         self._assert_spy_check(expected_spy, actual_spy)
+
+        assert self.statechart.project.categories == {0: 'cat1', 1: 'cat2'}
+        assert self.statechart.project.data == [TextInfo('text1', category_id=0), TextInfo('text2', category_id=1), TextInfo('text3', category_id=1)]
+
+    def test_save_project_event(self):
+        path_to_temp_project_file = pathlib.Path(tempfile.mktemp())
+
+        self.statechart.launch_load_project_event(path_to_project=self.path_to_project)
+        self.statechart.launch_mark_text_event(text_id=1, category_id=1)
+        self.statechart.launch_save_project_event(path_to_temp_project_file)
+        self.statechart.launch_load_project_event(path_to_project=self.path_to_project)
+        self.statechart.launch_load_project_event(path_to_project=path_to_temp_project_file)
+        time.sleep(0.1)
+
+        expected_spy = ['START', 'SEARCH_FOR_SUPER_SIGNAL:init', 'ENTRY_SIGNAL:init', 'INIT_SIGNAL:init', '<- Queued:(0) Deferred:(0)', 'LOAD_PROJECT:init', 'SEARCH_FOR_SUPER_SIGNAL:in_project', 'ENTRY_SIGNAL:in_project', 'INIT_SIGNAL:in_project', '<- Queued:(4) Deferred:(0)', 'MARK_TEXT:in_project', 'MARK_TEXT:in_project:HOOK', '<- Queued:(3) Deferred:(0)', 'SAVE_PROJECT:in_project', 'SAVE_PROJECT:in_project:HOOK', '<- Queued:(2) Deferred:(0)', 'LOAD_PROJECT:in_project', 'LOAD_PROJECT:init', 'EXIT_SIGNAL:in_project', 'SEARCH_FOR_SUPER_SIGNAL:in_project', 'ENTRY_SIGNAL:in_project', 'INIT_SIGNAL:in_project', '<- Queued:(1) Deferred:(0)', 'LOAD_PROJECT:in_project', 'LOAD_PROJECT:init', 'EXIT_SIGNAL:in_project', 'SEARCH_FOR_SUPER_SIGNAL:in_project', 'ENTRY_SIGNAL:in_project', 'INIT_SIGNAL:in_project', '<- Queued:(0) Deferred:(0)']
+        actual_spy = self.statechart.spy()
+        self._assert_spy_check(expected_spy, actual_spy)
+
+        expected_trace = '''
+        [2024-08-12 12:32:40.795100] [statechart] e->start_at() top->init
+        [2024-08-12 12:32:40.796069] [statechart] e->LOAD_PROJECT() init->in_project
+        [2024-08-12 12:32:40.796391] [statechart] e->LOAD_PROJECT() in_project->in_project
+        [2024-08-12 12:32:40.796504] [statechart] e->LOAD_PROJECT() in_project->in_project
+        '''
+        actual_trace = self.statechart.trace()
+        self._assert_trace_check(expected_trace, actual_trace)
+
+        assert os.path.exists(path_to_temp_project_file)
 
         assert self.statechart.project.categories == {0: 'cat1', 1: 'cat2'}
         assert self.statechart.project.data == [TextInfo('text1', category_id=0), TextInfo('text2', category_id=1), TextInfo('text3', category_id=1)]
