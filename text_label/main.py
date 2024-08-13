@@ -1,3 +1,4 @@
+import tkinter
 from collections import namedtuple
 from dataclasses import dataclass
 import json
@@ -30,7 +31,50 @@ class Gui:
         self.bus.register('gui', self)
 
     def run(self):
-        pass
+        self.root = tkinter.Tk()
+
+        self.main_menu = tkinter.Menu()
+        self.project_menu = tkinter.Menu(self.main_menu, tearoff=False)
+        self.categories_texts_menu = tkinter.Menu(self.main_menu, tearoff=False)
+
+        self.main_frame = tkinter.Frame(self.root, background='yellow')
+        self.categories_frame = tkinter.Frame(self.main_frame, background='red')
+        self.texts_frame = tkinter.Frame(self.main_frame, background='green')
+        self.current_text_frame = tkinter.Frame(self.main_frame, background='blue')
+
+        self.root.attributes('-zoomed', True)
+        self.root.rowconfigure(0, weight=1)
+        self.root.columnconfigure(0, weight=1)
+
+        self.project_menu.add_command(label='New', accelerator='Ctrl-n')
+        self.project_menu.add_command(label='Open', accelerator='Ctrl-o')
+        self.project_menu.add_command(label='Save', accelerator='Ctrl-s')
+        self.project_menu.add_command(label='Export', accelerator='Ctrl-e', state='disabled')
+
+        self.categories_texts_menu.add_command(label='Add Category')
+        self.categories_texts_menu.add_command(label='Remove Category')
+        self.categories_texts_menu.add_separator()
+        self.categories_texts_menu.add_command(label='Add Text', accelerator='Ctrl-i')
+        self.categories_texts_menu.add_command(label='Add Text From File', accelerator='Ctrl-f')
+
+        self.main_menu.add_cascade(label='Project', menu=self.project_menu)
+        self.main_menu.add_cascade(label='Categories/Texts', menu=self.categories_texts_menu)
+        self.main_menu.add_command(label='Help')
+
+
+
+        self.main_frame.grid(row=0, column=0, sticky='nesw')
+        self.main_frame.rowconfigure(0, weight=5)
+        self.main_frame.columnconfigure(0, weight=10)
+        self.main_frame.rowconfigure(1, weight=95)
+        self.main_frame.columnconfigure(1, weight=90)
+
+        self.categories_frame.grid(row=0, column=0, sticky='nesw', columnspan=2)
+        self.texts_frame.grid(row=1, column=0, sticky='nesw')
+        self.current_text_frame.grid(row=1, column=1, sticky='nesw')
+
+        self.root.config(menu=self.main_menu)
+        self.root.mainloop()
 
 
 @dataclass
