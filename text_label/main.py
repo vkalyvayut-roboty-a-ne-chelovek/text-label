@@ -40,28 +40,27 @@ class Gui:
         self.main_frame = tkinter.Frame(self.root, background='yellow')
         self.categories_frame = tkinter.Frame(self.main_frame, background='red')
         self.texts_frame = tkinter.Frame(self.main_frame, background='green')
-        self.current_text_frame = tkinter.Frame(self.main_frame, background='blue')
+        self.current_text_sv = tkinter.StringVar(value='Тестовый текст')
+        self.current_text_frame = tkinter.Label(self.main_frame, background='blue', textvariable=self.current_text_sv)
 
         self.root.attributes('-zoomed', True)
         self.root.rowconfigure(0, weight=1)
         self.root.columnconfigure(0, weight=1)
 
-        self.project_menu.add_command(label='New', accelerator='Ctrl-n')
-        self.project_menu.add_command(label='Open', accelerator='Ctrl-o')
-        self.project_menu.add_command(label='Save', accelerator='Ctrl-s')
-        self.project_menu.add_command(label='Export', accelerator='Ctrl-e', state='disabled')
+        self.project_menu.add_command(label='New', accelerator='Ctrl-n', command=self.bus.statechart.launch_new_project_event())
+        self.project_menu.add_command(label='Open', accelerator='Ctrl-o', command=self._show_open_project_popup)
+        self.project_menu.add_command(label='Save', accelerator='Ctrl-s', command=self._show_save_project_popup)
+        self.project_menu.add_command(label='Export', accelerator='Ctrl-e', command=self._show_export_project_popup, state='disabled')
 
-        self.categories_texts_menu.add_command(label='Add Category')
-        self.categories_texts_menu.add_command(label='Remove Category')
+        self.categories_texts_menu.add_command(label='Add Category', command=self._show_add_category_popup_popup)
+        self.categories_texts_menu.add_command(label='Remove Category', command=self._show_remove_category_popup)
         self.categories_texts_menu.add_separator()
-        self.categories_texts_menu.add_command(label='Add Text', accelerator='Ctrl-i')
-        self.categories_texts_menu.add_command(label='Add Text From File', accelerator='Ctrl-f')
+        self.categories_texts_menu.add_command(label='Add Text', accelerator='Ctrl-i', command=self._show_import_text_from_input_popup)
+        self.categories_texts_menu.add_command(label='Import Text From File', accelerator='Ctrl-f', command=self._show_import_text_from_file_popup)
 
         self.main_menu.add_cascade(label='Project', menu=self.project_menu)
         self.main_menu.add_cascade(label='Categories/Texts', menu=self.categories_texts_menu)
         self.main_menu.add_command(label='Help')
-
-
 
         self.main_frame.grid(row=0, column=0, sticky='nesw')
         self.main_frame.rowconfigure(0, weight=5)
@@ -75,6 +74,33 @@ class Gui:
 
         self.root.config(menu=self.main_menu)
         self.root.mainloop()
+
+    def update_categories(self, categories: dict):
+        pass
+
+    def update_texts(self, texts: dict):
+        pass
+
+    def _show_open_project_popup(self):
+        pass
+
+    def _show_save_project_popup(self):
+        pass
+
+    def _show_export_project_popup(self):
+        pass
+
+    def _show_add_category_popup_popup(self):
+        pass
+
+    def _show_remove_category_popup(self):
+        pass
+
+    def _show_import_text_from_input_popup(self):
+        pass
+
+    def _show_import_text_from_file_popup(self):
+        pass
 
 
 @dataclass
@@ -145,21 +171,35 @@ class Statechart(ActiveObject):
     def on_new_project_in_init(self):
         self.project = Project()
 
+        self.bus.gui.update_categories(self.project.categories)
+        self.bus.gui.update_texts(self.project.get_texts())
+
     def on_load_project_in_init(self, path_to_project: pathlib.Path):
         self.project = Project.load_project_from_path(path_to_project)
+
+        self.bus.gui.update_categories(self.project.categories)
+        self.bus.gui.update_texts(self.project.get_texts())
 
     def on_add_category_in_in_project(self, category: str):
         self.project.add_category(category)
 
+        self.bus.gui.update_categories(self.project.categories)
+
     def on_import_text_from_input_in_in_project(self, text: str):
         self.project.add_text(text)
+
+        self.bus.gui.update_texts(self.project.get_texts())
 
     def on_import_text_from_file_in_in_project(self, path_to_file: pathlib.Path):
         with open(path_to_file, mode='r', encoding='utf-8') as text_handle:
             self.project.add_text(text_handle.read())
 
+            self.bus.gui.update_texts(self.project.get_texts())
+
     def on_mark_text_in_in_project(self, text_id: int, category_id: int):
         self.project.mark_text(text_id=text_id, category_id=category_id)
+
+        self.bus.gui.update_categories(self.project.categories)
 
     def on_save_project_in_in_project(self, path_to_project: pathlib.Path):
         self.project.save_project(path_to_project)
