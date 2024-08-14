@@ -1,4 +1,5 @@
 import tkinter
+from tkinter import filedialog, scrolledtext
 from collections import namedtuple
 from dataclasses import dataclass
 import json
@@ -48,7 +49,7 @@ class Gui:
         self.root.columnconfigure(0, weight=1)
 
         self.project_menu.add_command(label='New', accelerator='Ctrl-n', command=self.bus.statechart.launch_new_project_event())
-        self.project_menu.add_command(label='Open', accelerator='Ctrl-o', command=self._show_open_project_popup)
+        self.project_menu.add_command(label='Open', accelerator='Ctrl-o', command=self._show_load_project_popup)
         self.project_menu.add_command(label='Save', accelerator='Ctrl-s', command=self._show_save_project_popup)
         self.project_menu.add_command(label='Export', accelerator='Ctrl-e', command=self._show_export_project_popup, state='disabled')
 
@@ -81,26 +82,93 @@ class Gui:
     def update_texts(self, texts: dict):
         pass
 
-    def _show_open_project_popup(self):
-        pass
+    def _show_load_project_popup(self):
+        if path_to_project := filedialog.askopenfilename(filetypes=[('Project', '.json.tl')]):
+            self.bus.statechart.launch_load_project_event(path_to_project)
 
     def _show_save_project_popup(self):
-        pass
+        if path_to_project := filedialog.asksaveasfilename(filetypes=[('Project', '.json.tl')]):
+            self.bus.statechart.launch_save_project_event(path_to_project)
 
     def _show_export_project_popup(self):
         pass
 
     def _show_add_category_popup_popup(self):
-        pass
+        def send_event():
+            category = input_sv.get().strip()
+            if len(category) > 0:
+                self.bus.statechart.launch_add_category_event(category)
+                root.destroy()
+
+        root = tkinter.Toplevel()
+        root.title('Add Category')
+
+        main_frame = tkinter.Frame(root)
+        input_sv = tkinter.StringVar()
+        input_ = tkinter.Entry(main_frame, textvariable=input_sv)
+        input_.bind('<Enter>', lambda _: send_event())
+        input_.bind('<KP_Enter>', lambda _: send_event())
+
+        button = tkinter.Button(main_frame, text='Add Category', command=send_event)
+
+        root.resizable(False, False)
+        root.columnconfigure(0, weight=1)
+        root.rowconfigure(0, weight=1)
+
+        main_frame.columnconfigure(0, weight=1)
+        main_frame.rowconfigure(0, weight=1)
+        main_frame.grid(row=0, column=0, sticky='nesw')
+
+        input_.grid(row=0, column=0, sticky='ew', padx=10, pady=10)
+        button.grid(row=1, column=0, pady=10)
+
+        input_.focus()
+
+        root.grab_set()
+        root.bind('<Escape>', lambda _: root.destroy())
+
+        root.mainloop()
 
     def _show_remove_category_popup(self):
         pass
 
     def _show_import_text_from_input_popup(self):
-        pass
+        root = tkinter.Toplevel()
+        root.title('Add Text')
+
+        main_frame = tkinter.Frame(root)
+        input_sv = tkinter.StringVar()
+        input_ = scrolledtext.ScrolledText(main_frame, width=50, height=15)
+
+        button = tkinter.Button(main_frame, text='Add Text')
+
+        root.columnconfigure(0, weight=1)
+        root.rowconfigure(0, weight=1)
+
+        main_frame.columnconfigure(0, weight=1)
+        main_frame.rowconfigure(0, weight=1)
+        main_frame.grid(row=0, column=0, sticky='nesw')
+
+        input_.grid(row=0, column=0, sticky='ew', padx=10, pady=10)
+        button.grid(row=1, column=0, pady=10)
+
+        def send_event():
+            text = input_.get('1.0', index2=tkinter.END).strip()
+            if len(text) > 0:
+                self.bus.statechart.launch_import_text_from_input(text)
+                root.destroy()
+
+        root.grab_set()
+        root.bind('<Escape>', lambda _: root.destroy())
+
+        input_.focus()
+        button.configure(command=send_event)
+
+        root.mainloop()
 
     def _show_import_text_from_file_popup(self):
-        pass
+        if path_to_file := filedialog.askopenfilename(filetypes=[('Text', '.txt')]):
+            self.bus.statechart.launch_import_text_from_file(path_to_file)
 
 
 @dataclass
