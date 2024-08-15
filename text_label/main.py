@@ -1,10 +1,11 @@
+import copy
 import tkinter
 from tkinter import filedialog, scrolledtext
 from collections import namedtuple
 from dataclasses import dataclass
 import json
 import pathlib
-from typing import Optional, Union
+from typing import Optional, Union, List
 
 from miros import ActiveObject
 from miros import return_status, signals, Event
@@ -175,6 +176,20 @@ class Gui:
 class TextInfo:
     text: str
     category_id: Optional[int] = None
+
+
+class History:
+    def __init__(self, initial_state):
+        self.states: List = [initial_state]
+
+    def apply_changes(self, new_state):
+        self.states.append(new_state)
+
+    def prev_state(self):
+        if len(self.states) > 1:
+            return self.states.pop()
+        else:
+            return copy.copy(self.states[0])
 
 
 class Project:
