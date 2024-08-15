@@ -5,7 +5,7 @@ from collections import namedtuple
 from dataclasses import dataclass
 import json
 import pathlib
-from typing import Optional, Union, List
+from typing import Optional, Union, List, Tuple
 
 from miros import ActiveObject
 from miros import return_status, signals, Event
@@ -59,6 +59,8 @@ class Gui:
         self.categories_texts_menu.add_separator()
         self.categories_texts_menu.add_command(label='Add Text', accelerator='Ctrl-i', command=self._show_import_text_from_input_popup)
         self.categories_texts_menu.add_command(label='Import Text From File', accelerator='Ctrl-f', command=self._show_import_text_from_file_popup)
+        self.categories_texts_menu.add_separator()
+        self.categories_texts_menu.add_command(label='Undo', accelerator='Ctrl-z', command=self.bus.statechart.launch_undo_event)
 
         self.main_menu.add_cascade(label='Project', menu=self.project_menu)
         self.main_menu.add_cascade(label='Categories/Texts', menu=self.categories_texts_menu)
@@ -172,6 +174,42 @@ class Gui:
             self.bus.statechart.launch_import_text_from_file(path_to_file)
 
 
+class TestableGui(Gui):
+    def __init__(self, bus: Bus):
+        self.bus = bus
+        self.bus.register('gui', self)
+
+    def run(self):
+        pass
+
+    def update_categories(self, categories: dict):
+        pass
+
+    def update_texts(self, texts: dict):
+        pass
+
+    def _show_load_project_popup(self):
+        pass
+
+    def _show_save_project_popup(self):
+        pass
+
+    def _show_export_project_popup(self):
+        pass
+
+    def _show_add_category_popup_popup(self):
+        pass
+
+    def _show_remove_category_popup(self):
+        pass
+
+    def _show_import_text_from_input_popup(self):
+        pass
+
+    def _show_import_text_from_file_popup(self):
+        pass
+
+
 @dataclass
 class TextInfo:
     text: str
@@ -182,20 +220,24 @@ class History:
     def __init__(self, initial_state):
         self.states: List = [initial_state]
 
-    def apply_changes(self, new_state):
-        self.states.append(new_state)
+    def add_state(self, new_state):
+        self.states.append(copy.deepcopy(new_state))
 
-    def prev_state(self):
+    def rollback_state(self):
         if len(self.states) > 1:
             return self.states.pop()
         else:
-            return copy.copy(self.states[0])
+            return copy.deepcopy(self.states[0])
+
+    def get_current_state(self):
+        return copy.deepcopy(self.states[-1])
 
 
 class Project:
     def __init__(self, categories: Optional[dict[int, str]] = None, data: Optional[list] = ()):
         self.categories: dict[int, str] = self._make_categories_from_raw(categories if categories else {})
         self.data: list[TextInfo] = self._make_data_from_raw(data)
+        self.history = History(self._get_snapshot())
 
     @staticmethod
     def _make_categories_from_raw(categories: dict[Union[str, int]]) -> dict[int, str]:
@@ -205,6 +247,9 @@ class Project:
     def _make_data_from_raw(data: list) -> list[TextInfo]:
         return [TextInfo(text=text_info[0], category_id=text_info[1]) if len(text_info) == 2 else TextInfo(text=text_info[0])
                 for text_info in list(data)]
+
+    def _get_snapshot(self) -> Tuple:
+        return copy.deepcopy((self.categories, self.data))
 
     @staticmethod
     def load_project_from_path(path_to_project: pathlib.Path):
@@ -216,29 +261,39 @@ class Project:
         with open(path_to_project, mode='w', encoding='utf-8') as project_handle:
             raw = {"version": 0, "categories": self.categories, "data": [[text_info.text, text_info.category_id] for text_info in self.data]}
             project_handle.write(json.dumps(raw))
+        self.history = History(self._get_snapshot())
 
     def add_category(self, category: str):
         if category not in self.categories.values():
-            next_id = list(self.categories.keys())[-1]+1 if self.categories else 0
+            next_id = list(self.categories.keys())[-1]+1 if len(self.categories) > 0 else 0
             self.categories[next_id] = category
+            self.history.add_state(self._get_snapshot())
 
     def remove_category(self, category_id: int):
         self.categories.pop(category_id)
         for text_id, text_info in enumerate(self.data):
             if text_info.category_id == category_id:
                 self.data[text_id].category_id = None
+                self.history.add_state(self._get_snapshot())
 
     def add_text(self, text: str):
         self.data.append(TextInfo(text=text))
+        self.history.add_state(self._get_snapshot())
 
     def remove_text(self, text_id: int):
         self.data.pop(text_id)
+        self.history.add_state(self._get_snapshot())
 
     def mark_text(self, text_id: int, category_id: int):
         self.data[text_id].category_id = category_id
+        self.history.add_state(self._get_snapshot())
 
     def get_texts(self) -> list[TextInfo]:
         return self.data
+
+    def undo(self):
+        self.history.rollback_state()
+        self.categories, self.data = self.history.get_current_state()
 
 
 class Statechart(ActiveObject):
@@ -308,6 +363,12 @@ class Statechart(ActiveObject):
     def launch_save_project_event(self, path_to_project: pathlib.Path):
         self.post_fifo(Event(signal=signals.SAVE_PROJECT, payload=path_to_project))
 
+    def launch_undo_event(self):
+        self.post_fifo(Event(signal=signals.UNDO))
+
+    def on_undo_project_in_in_project(self):
+        self.project.undo()
+
 
 @spy_on
 def init(s: Statechart, e: Event) -> return_status:
@@ -351,6 +412,9 @@ def in_project(s: Statechart, e: Event) -> return_status:
     elif e.signal == signals.SAVE_PROJECT:
         status = return_status.HANDLED
         s.on_save_project_in_in_project(e.payload)
+    elif e.signal == signals.UNDO:
+        status = return_status.HANDLED
+        s.on_undo_project_in_in_project()
     else:
         status = return_status.SUPER
         s.temp.fun = init
