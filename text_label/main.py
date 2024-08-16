@@ -1,6 +1,6 @@
 import copy
 import tkinter
-from tkinter import filedialog, scrolledtext
+from tkinter import filedialog, scrolledtext, ttk
 from collections import namedtuple
 from dataclasses import dataclass
 import json
@@ -32,6 +32,11 @@ class Gui:
         self.bus = bus
         self.bus.register('gui', self)
 
+        self.current_text_idx: int = None
+        self.categories_rb: List = []
+        self.texts: List[str] = [str(i) for i in range(100)]
+        self.categories: dict[int, str] = {}
+
     def run(self):
         self.root = tkinter.Tk()
 
@@ -42,6 +47,10 @@ class Gui:
         self.main_frame = tkinter.Frame(self.root, background='yellow')
         self.categories_frame = tkinter.Frame(self.main_frame, background='red')
         self.texts_frame = tkinter.Frame(self.main_frame, background='green')
+        self.texts_sv = tkinter.StringVar(value=self.texts)
+        self.texts_list = tkinter.Listbox(self.texts_frame, listvariable=self.texts_sv)
+        self.texts_scrollbar = tkinter.Scrollbar(self.texts_frame, orient='vertical', command=self.texts_list.yview)
+        self.texts_list['yscrollcommand'] = self.texts_scrollbar.set
         self.current_text_sv = tkinter.StringVar(value='Тестовый текст')
         self.current_text_frame = tkinter.Label(self.main_frame, background='blue', textvariable=self.current_text_sv)
 
@@ -68,22 +77,46 @@ class Gui:
 
         self.main_frame.grid(row=0, column=0, sticky='nesw')
         self.main_frame.rowconfigure(0, weight=5)
-        self.main_frame.columnconfigure(0, weight=10)
         self.main_frame.rowconfigure(1, weight=95)
         self.main_frame.columnconfigure(1, weight=90)
 
         self.categories_frame.grid(row=0, column=0, sticky='nesw', columnspan=2)
+
         self.texts_frame.grid(row=1, column=0, sticky='nesw')
+        self.texts_frame.rowconfigure(0, weight=1)
+        self.texts_list.grid(row=0, column=0, sticky='nesw')
+        self.texts_scrollbar.grid(row=0, column=1, sticky='ns')
+
         self.current_text_frame.grid(row=1, column=1, sticky='nesw')
 
         self.root.config(menu=self.main_menu)
         self.root.mainloop()
 
     def update_categories(self, categories: dict):
-        pass
+        self.categories = categories
+        for rb in self.categories_rb:
+            rb.destroy()
+        for k, v in self.categories.items():
+            rb = ttk.Radiobutton(self.categories_frame, value=k, text=v)
+            rb.grid(row=0, column=len(self.categories_rb), sticky='nesw')
+            self.categories_rb.append(rb)
 
-    def update_texts(self, texts: dict):
-        pass
+    def update_texts(self, texts: List[str]):
+        self.texts = texts
+
+    def _select_text(self, text_idx):
+        self.current_text_idx = text_idx
+        self.current_text_sv.set(self.texts[self.current_text_idx])
+
+    def _get_prev_text_idx(self):
+        if self.current_text_idx == 0:
+            return len(self.texts) - 1
+        return self.current_text_idx - 1
+
+    def _get_next_text_idx(self):
+        if self.current_text_idx == (len(self.texts) - 1):
+            return 0
+        return self.current_text_idx + 1
 
     def _show_load_project_popup(self):
         if path_to_project := filedialog.askopenfilename(filetypes=[('Project', '.json.tl')]):
@@ -337,7 +370,7 @@ class Statechart(ActiveObject):
     def on_mark_text_in_in_project(self, text_id: int, category_id: int):
         self.project.mark_text(text_id=text_id, category_id=category_id)
 
-        self.bus.gui.update_categories(self.project.categories)
+        self.bus.gui.update_texts(self.project.get_texts())
 
     def on_save_project_in_in_project(self, path_to_project: pathlib.Path):
         self.project.save_project(path_to_project)
