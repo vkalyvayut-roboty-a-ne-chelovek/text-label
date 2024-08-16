@@ -14,7 +14,7 @@ class TestProject(unittest.TestCase):
         assert project.data == []
 
     def test_load_project(self):
-        path_to_project = pathlib.Path(os.path.dirname(__file__), 'assets', 'test.text-label-project')
+        path_to_project = pathlib.Path(os.path.dirname(__file__), 'assets', 'test.json.tl')
         project = Project.load_project_from_path(path_to_project)
 
         assert len(project.categories) == 2
@@ -39,7 +39,7 @@ class TestProject(unittest.TestCase):
         assert project.categories == {0: 'cat1', 1: 'cat2'}
 
     def test_remove_category(self):
-        path_to_project = pathlib.Path(os.path.dirname(__file__), 'assets', 'test.text-label-project')
+        path_to_project = pathlib.Path(os.path.dirname(__file__), 'assets', 'test.json.tl')
         project = Project.load_project_from_path(path_to_project)
 
         prev_categories = copy.copy(project.categories)
@@ -67,7 +67,7 @@ class TestProject(unittest.TestCase):
 
     def test_mark_text(self):
         project = Project()
-        path_to_project = pathlib.Path(os.path.dirname(__file__), 'assets', 'test.text-label-project')
+        path_to_project = pathlib.Path(os.path.dirname(__file__), 'assets', 'test.json.tl')
         project = Project.load_project_from_path(path_to_project)
 
         project.mark_text(1, 1)
@@ -82,7 +82,7 @@ class TestProject(unittest.TestCase):
         assert project.get_texts() == [TextInfo('text1'), TextInfo('text2'), TextInfo('text3')]
 
     def test_save_project(self):
-        path_to_project = pathlib.Path(os.path.dirname(__file__), 'assets', 'test.text-label-project')
+        path_to_project = pathlib.Path(os.path.dirname(__file__), 'assets', 'test.json.tl')
         project = Project.load_project_from_path(path_to_project)
         project.add_text('text4')
         project.add_text('text5')

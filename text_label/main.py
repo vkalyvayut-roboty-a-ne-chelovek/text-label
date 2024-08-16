@@ -33,7 +33,7 @@ class Gui:
         self.bus.register('gui', self)
 
         self.current_text_idx: int = None
-        self.categories_rb: List = []
+        self.categories_rb: dict = {}
         self.texts: List[str] = [str(i) for i in range(100)]
         self.categories: dict[int, str] = {}
 
@@ -46,11 +46,13 @@ class Gui:
 
         self.main_frame = tkinter.Frame(self.root, background='yellow')
         self.categories_frame = tkinter.Frame(self.main_frame, background='red')
+
         self.texts_frame = tkinter.Frame(self.main_frame, background='green')
         self.texts_sv = tkinter.StringVar(value=self.texts)
         self.texts_list = tkinter.Listbox(self.texts_frame, listvariable=self.texts_sv)
         self.texts_scrollbar = tkinter.Scrollbar(self.texts_frame, orient='vertical', command=self.texts_list.yview)
         self.texts_list['yscrollcommand'] = self.texts_scrollbar.set
+
         self.current_text_sv = tkinter.StringVar(value='Тестовый текст')
         self.current_text_frame = tkinter.Label(self.main_frame, background='blue', textvariable=self.current_text_sv)
 
@@ -89,24 +91,37 @@ class Gui:
 
         self.current_text_frame.grid(row=1, column=1, sticky='nesw')
 
+        def _on_texts_list_listbox_select_event_cb(_):
+            item_idx = self.texts_list.curselection()
+            if len(item_idx) > 0:
+                self._select_text(item_idx[0])
+        self.texts_list.bind('<<ListboxSelect>>', _on_texts_list_listbox_select_event_cb)
+
         self.root.config(menu=self.main_menu)
         self.root.mainloop()
 
     def update_categories(self, categories: dict):
         self.categories = categories
-        for rb in self.categories_rb:
+
+        for rb in self.categories_rb.values():
             rb.destroy()
+
         for k, v in self.categories.items():
             rb = ttk.Radiobutton(self.categories_frame, value=k, text=v)
-            rb.grid(row=0, column=len(self.categories_rb), sticky='nesw')
-            self.categories_rb.append(rb)
+            rb.grid(row=0, column=len(self.categories_rb.items()), sticky='nesw')
+            self.categories_rb[k] = rb
 
     def update_texts(self, texts: List[str]):
         self.texts = texts
+        self.texts_sv.set(self.texts)
 
     def _select_text(self, text_idx):
         self.current_text_idx = text_idx
-        self.current_text_sv.set(self.texts[self.current_text_idx])
+        if self.current_text_idx in self.texts:
+            self.current_text_sv.set(self.texts[self.current_text_idx].text)
+            self.categories_rb[self.texts[self.current_text_idx].category_id].invoke()
+        else:
+            self.current_text_sv.set('')
 
     def _get_prev_text_idx(self):
         if self.current_text_idx == 0:

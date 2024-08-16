@@ -32,7 +32,7 @@ class TestStatechart(unittest.TestCase):
         self.statechart.run()
         self.gui.run()
 
-        self.path_to_project = pathlib.Path(os.path.dirname(__file__), 'assets', 'test.text-label-project')
+        self.path_to_project = pathlib.Path(os.path.dirname(__file__), 'assets', 'test.json.tl')
         self.path_to_file = pathlib.Path(os.path.dirname(__file__), 'assets', 'text.txt')
 
     def test_new_project_event(self):
