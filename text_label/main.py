@@ -60,18 +60,18 @@ class Gui:
         self.root.rowconfigure(0, weight=1)
         self.root.columnconfigure(0, weight=1)
 
-        self.project_menu.add_command(label='New', accelerator='Ctrl-n', command=self.bus.statechart.launch_new_project_event())
+        self.project_menu.add_command(label='New', accelerator='Ctrl-n', command=self.bus.statechart.launch_new_project_event)
         self.project_menu.add_command(label='Open', accelerator='Ctrl-o', command=self._show_load_project_popup)
-        self.project_menu.add_command(label='Save', accelerator='Ctrl-s', command=self._show_save_project_popup)
+        self.project_menu.add_command(label='Save', accelerator='Ctrl-s', command=self._show_save_project_popup, state='disabled')
         self.project_menu.add_command(label='Export', accelerator='Ctrl-e', command=self._show_export_project_popup, state='disabled')
 
-        self.categories_texts_menu.add_command(label='Add Category', command=self._show_add_category_popup_popup)
-        self.categories_texts_menu.add_command(label='Remove Category', command=self._show_remove_category_popup)
+        self.categories_texts_menu.add_command(label='Add Category', accelerator='Ctrl-k', command=self._show_add_category_popup_popup, state='disabled')
+        self.categories_texts_menu.add_command(label='Remove Category', command=self._show_remove_category_popup, state='disabled')
         self.categories_texts_menu.add_separator()
-        self.categories_texts_menu.add_command(label='Add Text', accelerator='Ctrl-i', command=self._show_import_text_from_input_popup)
-        self.categories_texts_menu.add_command(label='Import Text From File', accelerator='Ctrl-f', command=self._show_import_text_from_file_popup)
+        self.categories_texts_menu.add_command(label='Add Text', accelerator='Ctrl-i', command=self._show_import_text_from_input_popup, state='disabled')
+        self.categories_texts_menu.add_command(label='Import Text From File', accelerator='Ctrl-f', command=self._show_import_text_from_file_popup, state='disabled')
         self.categories_texts_menu.add_separator()
-        self.categories_texts_menu.add_command(label='Undo', accelerator='Ctrl-z', command=self.bus.statechart.launch_undo_event)
+        self.categories_texts_menu.add_command(label='Undo', accelerator='Ctrl-z', command=self.bus.statechart.launch_undo_event, state='disabled')
 
         self.main_menu.add_cascade(label='Project', menu=self.project_menu)
         self.main_menu.add_cascade(label='Categories/Texts', menu=self.categories_texts_menu)
@@ -91,14 +91,36 @@ class Gui:
 
         self.current_text_frame.grid(row=1, column=1, sticky='nesw')
 
+        self.root.bind('<Control-n>', lambda _: self.bus.statechart.launch_new_project_event())
+
+        self.root.config(menu=self.main_menu)
+        self.root.mainloop()
+
+    def init_bindings(self):
         def _on_texts_list_listbox_select_event_cb(_):
             item_idx = self.texts_list.curselection()
             if len(item_idx) > 0:
                 self._select_text(item_idx[0])
+
         self.texts_list.bind('<<ListboxSelect>>', _on_texts_list_listbox_select_event_cb)
 
-        self.root.config(menu=self.main_menu)
-        self.root.mainloop()
+        self.root.bind('<Control-o>', lambda _: self._show_load_project_popup())
+
+        self.root.bind('<Control-s>', lambda _: self._show_save_project_popup())
+        self.root.bind('<Control-e>', lambda _: self._show_export_project_popup())
+        self.root.bind('<Control-k>', lambda _: self._show_add_category_popup_popup())
+        self.root.bind('<Control-i>', lambda _: self._show_import_text_from_input_popup())
+        self.root.bind('<Control-f>', lambda _: self._show_import_text_from_file_popup())
+        self.root.bind('<Control-z>', lambda _: self.bus.statechart.launch_undo_event())
+
+    def enable_menus(self):
+        self.project_menu.entryconfig('Save', state='normal')
+        self.project_menu.entryconfig('Export', state='normal')
+        self.categories_texts_menu.entryconfig('Add Category', state='normal')
+        self.categories_texts_menu.entryconfig('Remove Category', state='normal')
+        self.categories_texts_menu.entryconfig('Add Text', state='normal')
+        self.categories_texts_menu.entryconfig('Import Text From File', state='normal')
+        self.categories_texts_menu.entryconfig('Undo', state='normal')
 
     def update_categories(self, categories: dict):
         self.categories = categories
@@ -230,6 +252,12 @@ class TestableGui(Gui):
     def run(self):
         pass
 
+    def init_bindings(self):
+        pass
+
+    def enable_menus(self):
+        pass
+
     def update_categories(self, categories: dict):
         pass
 
@@ -357,11 +385,17 @@ class Statechart(ActiveObject):
     def on_new_project_in_init(self):
         self.project = Project()
 
+        self.bus.gui.enable_menus()
+        self.bus.gui.init_bindings()
+
         self.bus.gui.update_categories(self.project.categories)
         self.bus.gui.update_texts(self.project.get_texts())
 
     def on_load_project_in_init(self, path_to_project: pathlib.Path):
         self.project = Project.load_project_from_path(path_to_project)
+
+        self.bus.gui.enable_menus()
+        self.bus.gui.init_bindings()
 
         self.bus.gui.update_categories(self.project.categories)
         self.bus.gui.update_texts(self.project.get_texts())
@@ -477,6 +511,8 @@ def run():
 
     statechart.run()
     gui.run()
+    print(statechart.trace())
+    print(statechart.spy())
 
 
 if __name__ == '__main__':

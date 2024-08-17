@@ -1,0 +1,1 @@
+{"version": 0, "categories": {"0": "cat1", "1": "cat2"}, "data": [["text1", 0], ["text2"], ["text3", 1]]}
