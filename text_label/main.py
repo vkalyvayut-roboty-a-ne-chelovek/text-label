@@ -33,8 +33,8 @@ class Gui:
         self.bus.register('gui', self)
 
         self.current_text_idx: int = None
-        self.categories_rb: dict = {}
-        self.texts: List[str] = [str(i) for i in range(100)]
+        self.categories_rb: dict[int, ttk.Radiobutton] = {}
+        self.texts: List[TextInfo] = [TextInfo('xxx') for _ in range(10)]
         self.categories: dict[int, str] = {}
 
     def run(self):
@@ -48,7 +48,7 @@ class Gui:
         self.categories_frame = tkinter.Frame(self.main_frame, background='red')
 
         self.texts_frame = tkinter.Frame(self.main_frame, background='green')
-        self.texts_sv = tkinter.StringVar(value=self.texts)
+        self.texts_sv = tkinter.StringVar(value=[text.text for text in self.texts])
         self.texts_list = tkinter.Listbox(self.texts_frame, listvariable=self.texts_sv)
         self.texts_scrollbar = tkinter.Scrollbar(self.texts_frame, orient='vertical', command=self.texts_list.yview)
         self.texts_list['yscrollcommand'] = self.texts_scrollbar.set
@@ -135,23 +135,31 @@ class Gui:
 
     def update_texts(self, texts: List[str]):
         self.texts = texts
-        self.texts_sv.set(self.texts)
+        self.texts_sv.set([text.text for text in self.texts])
 
     def _select_text(self, text_idx):
         self.current_text_idx = text_idx
-        if self.current_text_idx in self.texts:
-            self.current_text_sv.set(self.texts[self.current_text_idx].text)
-            self.categories_rb[self.texts[self.current_text_idx].category_id].invoke()
+
+        if self.current_text_idx is not None and self.current_text_idx <= (len(self.texts) - 1):
+            text = self.texts[self.current_text_idx].text
+            category_id: Optional[int] = self.texts[self.current_text_idx].category_id
+            self.current_text_sv.set(text)
+            if category_id:
+                self.categories_rb[category_id].invoke()
         else:
             self.current_text_sv.set('')
 
-    def _get_prev_text_idx(self):
-        if self.current_text_idx == 0:
+    def _get_prev_text_idx(self) -> Optional[int]:
+        if len(self.texts) == 0:
+            return None
+        if self.current_text_idx is None or self.current_text_idx == 0:
             return len(self.texts) - 1
         return self.current_text_idx - 1
 
-    def _get_next_text_idx(self):
-        if self.current_text_idx == (len(self.texts) - 1):
+    def _get_next_text_idx(self) -> Optional[int]:
+        if len(self.texts) == 0:
+            return None
+        if self.current_text_idx is None or self.current_text_idx == (len(self.texts) - 1):
             return 0
         return self.current_text_idx + 1
 
@@ -210,7 +218,6 @@ class Gui:
         root.title('Add Text')
 
         main_frame = tkinter.Frame(root)
-        input_sv = tkinter.StringVar()
         input_ = scrolledtext.ScrolledText(main_frame, width=50, height=15)
 
         button = tkinter.Button(main_frame, text='Add Text')
