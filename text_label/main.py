@@ -92,6 +92,7 @@ class Gui:
         self.current_text_frame.grid(row=1, column=1, sticky='nesw')
 
         self.root.bind('<Control-n>', lambda _: self.bus.statechart.launch_new_project_event())
+        self.root.bind('<Control-o>', lambda _: self._show_load_project_popup())
 
         self.root.config(menu=self.main_menu)
         self.root.mainloop()
@@ -104,14 +105,24 @@ class Gui:
 
         self.texts_list.bind('<<ListboxSelect>>', _on_texts_list_listbox_select_event_cb)
 
-        self.root.bind('<Control-o>', lambda _: self._show_load_project_popup())
-
         self.root.bind('<Control-s>', lambda _: self._show_save_project_popup())
         self.root.bind('<Control-e>', lambda _: self._show_export_project_popup())
         self.root.bind('<Control-k>', lambda _: self._show_add_category_popup_popup())
         self.root.bind('<Control-i>', lambda _: self._show_import_text_from_input_popup())
         self.root.bind('<Control-f>', lambda _: self._show_import_text_from_file_popup())
         self.root.bind('<Control-z>', lambda _: self.bus.statechart.launch_undo_event())
+
+        def select_prev():
+            text_idx = self._get_prev_text_idx()
+            if text_idx is not None:
+                self._select_text(text_idx)
+
+        def select_next():
+            text_idx = self._get_next_text_idx()
+            if text_idx is not None:
+                self._select_text(text_idx)
+        self.root.bind('<KeyPress-Left>', lambda _: select_prev())
+        self.root.bind('<KeyPress-Right>', lambda _: select_next())
 
     def enable_menus(self):
         self.project_menu.entryconfig('Save', state='normal')
