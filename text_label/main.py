@@ -1,6 +1,6 @@
 import copy
 import tkinter
-from tkinter import filedialog, scrolledtext, ttk
+from tkinter import filedialog, scrolledtext, ttk, font
 from collections import namedtuple
 from dataclasses import dataclass
 import json
@@ -54,7 +54,8 @@ class Gui:
         self.texts_list['yscrollcommand'] = self.texts_scrollbar.set
 
         self.current_text_sv = tkinter.StringVar(value='Тестовый текст')
-        self.current_text_frame = tkinter.Label(self.main_frame, background='blue', textvariable=self.current_text_sv)
+        self.current_text_font = font.Font(size=24)
+        self.current_text_frame = tkinter.Label(self.main_frame, background='blue', textvariable=self.current_text_sv, font=self.current_text_font)
 
         self.root.attributes('-zoomed', True)
         self.root.rowconfigure(0, weight=1)
@@ -70,6 +71,9 @@ class Gui:
         self.categories_texts_menu.add_separator()
         self.categories_texts_menu.add_command(label='Add Text', accelerator='Ctrl-i', command=self._show_import_text_from_input_popup, state='disabled')
         self.categories_texts_menu.add_command(label='Import Text From File', accelerator='Ctrl-f', command=self._show_import_text_from_file_popup, state='disabled')
+        self.categories_texts_menu.add_separator()
+        self.categories_texts_menu.add_command(label='Font Size +', accelerator='Ctrl-+', command=lambda: self.change_font_size(2), state='disabled')
+        self.categories_texts_menu.add_command(label='Font Size -', accelerator='Ctrl--', command=lambda: self.change_font_size(-2), state='disabled')
         self.categories_texts_menu.add_separator()
         self.categories_texts_menu.add_command(label='Undo', accelerator='Ctrl-z', command=self.bus.statechart.launch_undo_event, state='disabled')
 
@@ -112,17 +116,16 @@ class Gui:
         self.root.bind('<Control-f>', lambda _: self._show_import_text_from_file_popup())
         self.root.bind('<Control-z>', lambda _: self.bus.statechart.launch_undo_event())
 
-        def select_prev():
-            text_idx = self._get_prev_text_idx()
-            if text_idx is not None:
-                self._select_text(text_idx)
+        self.root.bind('<KeyPress-Up>', lambda _: self.select_prev())
+        self.root.bind('<KeyPress-Down>', lambda _: self.select_next())
+        self.root.bind('<KeyPress-Left>', lambda _: self.select_prev())
+        self.root.bind('<KeyPress-Right>', lambda _: self.select_next())
 
-        def select_next():
-            text_idx = self._get_next_text_idx()
-            if text_idx is not None:
-                self._select_text(text_idx)
-        self.root.bind('<KeyPress-Left>', lambda _: select_prev())
-        self.root.bind('<KeyPress-Right>', lambda _: select_next())
+        self.root.bind('<KeyPress-equal>', lambda _: self.change_font_size(2))
+        self.root.bind('<Control-KP_Add>', lambda _: self.change_font_size(2))
+
+        self.root.bind('<Control-minus>', lambda _: self.change_font_size(-2))
+        self.root.bind('<KeyPress-KP_Subtract>', lambda _: self.change_font_size(-2))
 
     def enable_menus(self):
         self.project_menu.entryconfig('Save', state='normal')
@@ -131,6 +134,8 @@ class Gui:
         self.categories_texts_menu.entryconfig('Remove Category', state='normal')
         self.categories_texts_menu.entryconfig('Add Text', state='normal')
         self.categories_texts_menu.entryconfig('Import Text From File', state='normal')
+        self.categories_texts_menu.entryconfig('Font Size +', state='normal')
+        self.categories_texts_menu.entryconfig('Font Size -', state='normal')
         self.categories_texts_menu.entryconfig('Undo', state='normal')
 
     def update_categories(self, categories: dict):
@@ -173,6 +178,21 @@ class Gui:
         if self.current_text_idx is None or self.current_text_idx == (len(self.texts) - 1):
             return 0
         return self.current_text_idx + 1
+
+    def select_prev(self):
+        text_idx = self._get_prev_text_idx()
+        if text_idx is not None:
+            self._select_text(text_idx)
+
+    def select_next(self):
+        text_idx = self._get_next_text_idx()
+        if text_idx is not None:
+            self._select_text(text_idx)
+
+    def change_font_size(self, direction: int = 2):
+        current_font_size = int(self.current_text_font.cget('size'))
+        new_font_size = current_font_size + direction
+        self.current_text_font.config(size=new_font_size)
 
     def _show_load_project_popup(self):
         if path_to_project := filedialog.askopenfilename(filetypes=[('Project', '.json.tl')]):
