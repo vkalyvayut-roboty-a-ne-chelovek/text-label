@@ -34,7 +34,7 @@ class Gui:
 
         self.current_text_idx: int = None
         self.categories_rb: dict[int, ttk.Radiobutton] = {}
-        self.texts: List[TextInfo] = [TextInfo('xxx') for _ in range(10)]
+        self.texts: List[TextInfo] = []
         self.categories: dict[int, str] = {}
 
     def run(self):
@@ -46,6 +46,8 @@ class Gui:
 
         self.main_frame = tkinter.Frame(self.root, background='yellow')
         self.categories_frame = tkinter.Frame(self.main_frame, background='red')
+        self.categories_sv = tkinter.StringVar(value=-1)
+        self.nocategory_rb = ttk.Radiobutton(self.categories_frame, value=-1, text='NOCATEGORY', variable=self.categories_sv)
 
         self.texts_frame = tkinter.Frame(self.main_frame, background='green')
         self.texts_sv = tkinter.StringVar(value=[text.text for text in self.texts])
@@ -87,6 +89,7 @@ class Gui:
         self.main_frame.columnconfigure(1, weight=90)
 
         self.categories_frame.grid(row=0, column=0, sticky='nesw', columnspan=2)
+        self.nocategory_rb.grid(row=0, column=0, sticky='nesw')
 
         self.texts_frame.grid(row=1, column=0, sticky='nesw')
         self.texts_frame.rowconfigure(0, weight=1)
@@ -139,19 +142,21 @@ class Gui:
         self.categories_texts_menu.entryconfig('Undo', state='normal')
 
     def update_categories(self, categories: dict):
+        print('update_categories')
         self.categories = categories
 
         for rb in self.categories_rb.values():
             rb.destroy()
 
         for k, v in self.categories.items():
-            rb = ttk.Radiobutton(self.categories_frame, value=k, text=v)
-            rb.grid(row=0, column=len(self.categories_rb.items()), sticky='nesw')
-            self.categories_rb[k] = rb
+            rb = ttk.Radiobutton(self.categories_frame, value=copy.copy(str(k)), text=copy.copy(v), variable=self.categories_sv, command=lambda: self.bus.statechart.launch_mark_text_event(self.current_text_idx, category_id=copy.copy(k)))
+            rb.grid(row=0, column=len(self.categories_rb) + 2, sticky='nesw')
+            self.categories_rb[copy.copy(k)] = rb
 
     def update_texts(self, texts: List[str]):
         self.texts = texts
         self.texts_sv.set([text.text for text in self.texts])
+        self._select_text(0)
 
     def _select_text(self, text_idx):
         self.current_text_idx = text_idx
@@ -160,10 +165,10 @@ class Gui:
             text = self.texts[self.current_text_idx].text
             category_id: Optional[int] = self.texts[self.current_text_idx].category_id
             self.current_text_sv.set(text)
-            if category_id:
-                self.categories_rb[category_id].invoke()
+            self.categories_sv.set(str(category_id) if category_id is not None else '-1')
         else:
             self.current_text_sv.set('')
+            self.categories_sv.set('-1')
 
     def _get_prev_text_idx(self) -> Optional[int]:
         if len(self.texts) == 0:
@@ -455,6 +460,7 @@ class Statechart(ActiveObject):
             self.bus.gui.update_texts(self.project.get_texts())
 
     def on_mark_text_in_in_project(self, text_id: int, category_id: int):
+        print(text_id, category_id)
         self.project.mark_text(text_id=text_id, category_id=category_id)
 
         self.bus.gui.update_texts(self.project.get_texts())
@@ -549,8 +555,6 @@ def run():
 
     statechart.run()
     gui.run()
-    print(statechart.trace())
-    print(statechart.spy())
 
 
 if __name__ == '__main__':
