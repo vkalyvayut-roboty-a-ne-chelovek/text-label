@@ -4,7 +4,11 @@ import time
 import unittest
 import tempfile
 from text_label.main import *
+
 from miros import stripped
+
+from text_label.text_info import TextInfo
+from text_label.gui import TestableGui
 
 
 class TestStatechart(unittest.TestCase):

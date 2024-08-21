@@ -4,7 +4,8 @@ import unittest
 import pathlib
 import os.path
 
-from text_label.main import Project, TextInfo
+from text_label.project import Project
+from text_label.text_info import TextInfo
 
 
 class TestProject(unittest.TestCase):

@@ -1,6 +1,6 @@
 import unittest
 
-from text_label.main import History
+from text_label.history import History
 
 
 class TestHistory(unittest.TestCase):
