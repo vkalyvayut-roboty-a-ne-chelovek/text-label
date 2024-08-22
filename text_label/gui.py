@@ -27,12 +27,16 @@ class Gui:
         self.main_frame = tkinter.Frame(self.root, background='yellow')
         self.categories_frame = tkinter.Frame(self.main_frame, background='red')
         self.categories_sv = tkinter.StringVar(value=-1)
-        self.nocategory_rb = ttk.Radiobutton(self.categories_frame, value=-1, text='NOCATEGORY', variable=self.categories_sv)
+        self.nocategory_rb = ttk.Radiobutton(self.categories_frame,
+                                             value=-1,
+                                             text='<NOCATEGORY>',
+                                             variable=self.categories_sv,
+                                             command=lambda: self._mark_text(self.current_text_idx, category_id=int(self.categories_sv.get())))
 
         self.texts_frame = tkinter.Frame(self.main_frame, background='green')
-        self.texts_sv = tkinter.StringVar(value=[text.text for text in self.texts])
-        self.texts_list = tkinter.Listbox(self.texts_frame, listvariable=self.texts_sv)
+        self.texts_list = ttk.Treeview(self.texts_frame, columns=['Text', 'text_idx'], displaycolumns=['Text'], selectmode='browse', show='headings')
         self.texts_scrollbar = tkinter.Scrollbar(self.texts_frame, orient='vertical', command=self.texts_list.yview)
+
         self.texts_list['yscrollcommand'] = self.texts_scrollbar.set
 
         self.current_text_sv = tkinter.StringVar(value='Тестовый текст')
@@ -86,11 +90,12 @@ class Gui:
 
     def init_bindings(self):
         def _on_texts_list_listbox_select_event_cb(_):
-            item_idx = self.texts_list.curselection()
-            if len(item_idx) > 0:
-                self._select_text(item_idx[0])
+            item_idx = self.texts_list.selection()
+            if item_idx and len(item_idx) > 0:
+                text_idx = self.texts_list.item(item_idx[0], 'values')[1]
+                self._select_text(int(text_idx))
 
-        self.texts_list.bind('<<ListboxSelect>>', _on_texts_list_listbox_select_event_cb)
+        self.texts_list.bind('<Double-Button-1>', _on_texts_list_listbox_select_event_cb)
 
         self.root.bind('<Control-s>', lambda _: self._show_save_project_popup())
         self.root.bind('<Control-e>', lambda _: self._show_export_project_popup())
@@ -122,21 +127,33 @@ class Gui:
         self.categories_texts_menu.entryconfig('Undo', state='normal')
 
     def update_categories(self, categories: dict):
-        print('update_categories')
         self.categories = categories
 
         for rb in self.categories_rb.values():
             rb.destroy()
 
         for k, v in self.categories.items():
-            rb = ttk.Radiobutton(self.categories_frame, value=copy.copy(str(k)), text=copy.copy(v), variable=self.categories_sv, command=lambda: self._mark_text(self.current_text_idx, category_id=copy.copy(k)))
-            rb.grid(row=0, column=len(self.categories_rb) + 2, sticky='nesw')
-            self.categories_rb[copy.copy(k)] = rb
+            rb_idx = copy.copy(k)
+            self.categories_rb[rb_idx] = ttk.Radiobutton(self.categories_frame,
+                                                         value=copy.copy(str(k)),
+                                                         text=copy.copy(v),
+                                                         variable=self.categories_sv,
+                                                         command=lambda: self._mark_text(self.current_text_idx, category_id=int(self.categories_sv.get())))
+            self.categories_rb[rb_idx].grid(row=0, column=len(self.categories_rb) + 1, sticky='nesw')
 
-    def update_texts(self, texts: List[str]):
+    def update_texts(self, texts: List[TextInfo]):
+        same_size = len(texts) == self.texts
         self.texts = texts
-        self.texts_sv.set([text.text for text in self.texts])
-        self._select_text(0)
+        if self.texts_list.tag_has('#text'):
+            for item in self.texts_list.get_children(''):
+                self.texts_list.delete(item)
+
+        for text_idx, text in enumerate(self.texts):
+            self.texts_list.insert('', 'end', values=(copy.copy(text.text),copy.copy(text_idx)), tags=('#text',))
+        if same_size:
+            self._select_text(self.current_text_idx)
+        else:
+            self._select_text(0)
 
     def _select_text(self, text_idx):
         self.current_text_idx = text_idx
@@ -144,7 +161,6 @@ class Gui:
         if self.current_text_idx is not None and self.current_text_idx <= (len(self.texts) - 1):
             text = self.texts[self.current_text_idx].text
             category_id: Optional[int] = self.texts[self.current_text_idx].category_id
-            print(self.current_text_idx, category_id)
             self.current_text_sv.set(text)
             self.categories_sv.set(str(category_id) if category_id is not None else '-1')
         else:

@@ -3,12 +3,13 @@ import pathlib
 import time
 import unittest
 import tempfile
-from text_label.main import *
 
 from miros import stripped
 
 from text_label.text_info import TextInfo
+from text_label.statechart import Statechart
 from text_label.gui import TestableGui
+from text_label.bus import Bus
 
 
 class TestStatechart(unittest.TestCase):
