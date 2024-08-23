@@ -136,7 +136,7 @@ class Gui:
             rb_idx = copy.copy(k)
             self.categories_rb[rb_idx] = ttk.Radiobutton(self.categories_frame,
                                                          value=copy.copy(str(k)),
-                                                         text=copy.copy(v),
+                                                         text=v,
                                                          variable=self.categories_sv,
                                                          command=lambda: self._mark_text(self.current_text_idx, category_id=int(self.categories_sv.get())))
             self.categories_rb[rb_idx].grid(row=0, column=len(self.categories_rb) + 1, sticky='nesw')
@@ -163,9 +163,16 @@ class Gui:
             category_id: Optional[int] = self.texts[self.current_text_idx].category_id
             self.current_text_sv.set(text)
             self.categories_sv.set(str(category_id) if category_id is not None else '-1')
+            self._set_text_list_selection(self.current_text_idx)
         else:
             self.current_text_sv.set('')
             self.categories_sv.set('-1')
+
+    def _set_text_list_selection(self, text_idx_to_select):
+        for text_list_item_idx, text_list_item in enumerate(self.texts_list.get_children('')):
+            if text_idx_to_select == text_list_item_idx:
+                self.texts_list.selection_set((text_list_item,))
+                break
 
     def _get_prev_text_idx(self) -> Optional[int]:
         if len(self.texts) == 0:
@@ -182,6 +189,7 @@ class Gui:
         return self.current_text_idx + 1
 
     def _mark_text(self, text_id: int, category_id: int):
+        print(text_id, category_id)
         self.bus.statechart.launch_mark_text_event(text_id, category_id)
 
     def select_prev(self):
