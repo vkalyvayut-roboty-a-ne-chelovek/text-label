@@ -115,6 +115,16 @@ class Gui:
         self.root.bind('<Control-minus>', lambda _: self.change_font_size(-2))
         self.root.bind('<KeyPress-KP_Subtract>', lambda _: self.change_font_size(-2))
 
+        for i in range(10):
+            idx = copy.copy(i)
+
+            # блять, какой же это пиздец
+            def __closure():
+                idx = i
+                return lambda e: self._select_radiobutton(idx)
+
+            self.root.bind(f'<KeyPress-KP_{i}>', __closure())
+
     def enable_menus(self):
         self.project_menu.entryconfig('Save', state='normal')
         self.project_menu.entryconfig('Export', state='normal')
@@ -136,7 +146,7 @@ class Gui:
             rb_idx = copy.copy(k)
             self.categories_rb[rb_idx] = ttk.Radiobutton(self.categories_frame,
                                                          value=copy.copy(str(k)),
-                                                         text=v,
+                                                         text=f'{v} <KP_{len(self.categories_rb) + 1}>',
                                                          variable=self.categories_sv,
                                                          command=lambda: self._mark_text(self.current_text_idx, category_id=int(self.categories_sv.get())))
             self.categories_rb[rb_idx].grid(row=0, column=len(self.categories_rb) + 1, sticky='nesw')
@@ -188,8 +198,17 @@ class Gui:
             return 0
         return self.current_text_idx + 1
 
+    def _select_radiobutton(self, idx):
+        if idx == 0:
+            self.nocategory_rb.invoke()
+        else:
+            idx -= 1
+            rb_keys = list(self.categories_rb.keys())
+            if idx <= (len(rb_keys) - 1):
+                rb_key_to_invoke = rb_keys[idx]
+                self.categories_rb[rb_key_to_invoke].invoke()
+
     def _mark_text(self, text_id: int, category_id: int):
-        print(text_id, category_id)
         self.bus.statechart.launch_mark_text_event(text_id, category_id)
 
     def select_prev(self):
