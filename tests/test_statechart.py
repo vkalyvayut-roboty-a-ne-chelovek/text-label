@@ -102,7 +102,7 @@ class TestStatechart(unittest.TestCase):
 
     def test_import_text_from_file_event(self):
         self.statechart.launch_new_project_event()
-        self.statechart.launch_import_text_from_file(self.path_to_file)
+        self.statechart.launch_import_text_from_file_event(self.path_to_file)
         time.sleep(0.1)
 
         expected_spy = ['START', 'SEARCH_FOR_SUPER_SIGNAL:init', 'ENTRY_SIGNAL:init', 'INIT_SIGNAL:init', '<- Queued:(0) Deferred:(0)', 'NEW_PROJECT:init', 'SEARCH_FOR_SUPER_SIGNAL:in_project', 'ENTRY_SIGNAL:in_project', 'INIT_SIGNAL:in_project', '<- Queued:(1) Deferred:(0)', 'IMPORT_TEXT_FROM_FILE:in_project', 'IMPORT_TEXT_FROM_FILE:in_project:HOOK', '<- Queued:(0) Deferred:(0)']
@@ -196,6 +196,17 @@ class TestStatechart(unittest.TestCase):
         assert self.statechart.project.get_texts() == []
 
         expected_spy = ['START', 'SEARCH_FOR_SUPER_SIGNAL:init', 'ENTRY_SIGNAL:init', 'INIT_SIGNAL:init', '<- Queued:(0) Deferred:(0)', 'NEW_PROJECT:init', 'SEARCH_FOR_SUPER_SIGNAL:in_project', 'ENTRY_SIGNAL:in_project', 'INIT_SIGNAL:in_project', '<- Queued:(3) Deferred:(0)', 'ADD_CATEGORY:in_project', 'ADD_CATEGORY:in_project:HOOK', '<- Queued:(2) Deferred:(0)', 'IMPORT_TEXT_FROM_INPUT:in_project', 'IMPORT_TEXT_FROM_INPUT:in_project:HOOK', '<- Queued:(1) Deferred:(0)', 'IMPORT_TEXT_FROM_INPUT:in_project', 'IMPORT_TEXT_FROM_INPUT:in_project:HOOK', '<- Queued:(0) Deferred:(0)', 'MARK_TEXT:in_project', 'MARK_TEXT:in_project:HOOK', '<- Queued:(0) Deferred:(0)', 'UNDO:in_project', 'UNDO:in_project:HOOK', '<- Queued:(0) Deferred:(0)', 'UNDO:in_project', 'UNDO:in_project:HOOK', '<- Queued:(0) Deferred:(0)', 'UNDO:in_project', 'UNDO:in_project:HOOK', '<- Queued:(0) Deferred:(0)', 'UNDO:in_project', 'UNDO:in_project:HOOK', '<- Queued:(0) Deferred:(0)']
+        actual_spy = self.statechart.spy()
+
+        self._assert_spy_check(expected_spy, actual_spy)
+
+    def test_remove_text(self):
+        self.statechart.launch_load_project_event(path_to_project=self.path_to_project)
+        time.sleep(0.1)
+        self.statechart.launch_remove_text_event(0)
+        time.sleep(0.1)
+
+        expected_spy = ['START', 'SEARCH_FOR_SUPER_SIGNAL:init', 'ENTRY_SIGNAL:init', 'INIT_SIGNAL:init', '<- Queued:(0) Deferred:(0)', 'LOAD_PROJECT:init', 'SEARCH_FOR_SUPER_SIGNAL:in_project', 'ENTRY_SIGNAL:in_project', 'INIT_SIGNAL:in_project', '<- Queued:(0) Deferred:(0)', 'REMOVE_TEXT:in_project', 'REMOVE_TEXT:in_project:HOOK', '<- Queued:(0) Deferred:(0)']
         actual_spy = self.statechart.spy()
 
         self._assert_spy_check(expected_spy, actual_spy)

@@ -103,6 +103,7 @@ class Gui:
         self.root.bind('<Control-i>', lambda _: self._show_import_text_from_input_popup())
         self.root.bind('<Control-f>', lambda _: self._show_import_text_from_file_popup())
         self.root.bind('<Control-z>', lambda _: self.bus.statechart.launch_undo_event())
+        self.root.bind('<KeyPress-Delete>', lambda _: self.bus.statechart.launch_remove_text_event(self.current_text_idx))
 
         self.root.bind('<KeyPress-Up>', lambda _: self.select_prev())
         self.root.bind('<KeyPress-Down>', lambda _: self.select_next())
@@ -311,7 +312,7 @@ class Gui:
 
     def _show_import_text_from_file_popup(self):
         if path_to_file := filedialog.askopenfilename(filetypes=[('Text', '.txt')]):
-            self.bus.statechart.launch_import_text_from_file(path_to_file)
+            self.bus.statechart.launch_import_text_from_file_event(path_to_file)
 
 class TestableGui(Gui):
     def __init__(self, bus: Bus):

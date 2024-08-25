@@ -54,6 +54,11 @@ class Statechart(ActiveObject):
     def on_mark_text_in_in_project(self, text_id: int, category_id: int):
         self.project.mark_text(text_id=text_id, category_id=category_id)
 
+    def on_remove_text_in_in_project(self, text_id: int):
+        self.project.remove_text(text_id=text_id)
+
+        self.bus.gui.update_texts(self.project.get_texts())
+
     def on_save_project_in_in_project(self, path_to_project: pathlib.Path):
         self.project.save_project(path_to_project)
 
@@ -69,8 +74,11 @@ class Statechart(ActiveObject):
     def launch_import_text_from_input(self, text: str):
         self.post_fifo(Event(signal=signals.IMPORT_TEXT_FROM_INPUT, payload=text))
 
-    def launch_import_text_from_file(self, path_to_file: pathlib.Path):
+    def launch_import_text_from_file_event(self, path_to_file: pathlib.Path):
         self.post_fifo(Event(signal=signals.IMPORT_TEXT_FROM_FILE, payload=path_to_file))
+
+    def launch_remove_text_event(self, text_id: int):
+        self.post_fifo(Event(signal=signals.REMOVE_TEXT, payload=text_id))
 
     def launch_mark_text_event(self, text_id: int, category_id):
         self.post_fifo(Event(signal=signals.MARK_TEXT, payload=(text_id, category_id)))
@@ -124,6 +132,9 @@ def in_project(s: Statechart, e: Event) -> return_status:
     elif e.signal == signals.MARK_TEXT:
         status = return_status.HANDLED
         s.on_mark_text_in_in_project(text_id=e.payload[0], category_id=e.payload[1])
+    elif e.signal == signals.REMOVE_TEXT:
+        status = return_status.HANDLED
+        s.on_remove_text_in_in_project(text_id=e.payload)
     elif e.signal == signals.SAVE_PROJECT:
         status = return_status.HANDLED
         s.on_save_project_in_in_project(e.payload)
