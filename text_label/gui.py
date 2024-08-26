@@ -7,13 +7,34 @@ from text_label.bus import Bus
 from text_label.text_info import TextInfo
 
 
+class CategoryWidget(tkinter.Frame):
+    def __init__(self, parent, text: str, value: str, variable, command):
+        super().__init__(parent)
+        self.parent = parent
+        self.text = text
+        self.value = value
+        self.variable = variable
+        self.command = command
+
+        self.rb = ttk.Radiobutton(self,
+                                  value=copy.copy(value),
+                                  text=copy.copy(text),
+                                  variable=self.variable,
+                                  command=self.command)
+        self.rb.grid(column=0, row=0)
+
+    def invoke(self):
+        print('invoke')
+        self.rb.invoke()
+
+
 class Gui:
     def __init__(self, bus: Bus):
         self.bus = bus
         self.bus.register('gui', self)
 
         self.current_text_idx: int = None
-        self.categories_rb: dict[int, ttk.Radiobutton] = {}
+        self.categories_rb: dict[int, CategoryWidget] = {}
         self.texts: List[TextInfo] = []
         self.categories: dict[int, str] = {}
 
@@ -145,11 +166,15 @@ class Gui:
 
         for k, v in self.categories.items():
             rb_idx = copy.copy(k)
-            self.categories_rb[rb_idx] = ttk.Radiobutton(self.categories_frame,
-                                                         value=copy.copy(str(k)),
-                                                         text=f'{v} <KP_{len(self.categories_rb) + 1}>',
-                                                         variable=self.categories_sv,
-                                                         command=lambda: self._mark_text(self.current_text_idx, category_id=int(self.categories_sv.get())))
+
+            def __rb_action_callback():
+                self._mark_text(self.current_text_idx, category_id=int(self.categories_sv.get()))
+
+            self.categories_rb[rb_idx] = CategoryWidget(self.categories_frame,
+                                                        value=copy.copy(str(k)),
+                                                        text=f'{v} <KP_{len(self.categories_rb) + 1}>',
+                                                        variable=self.categories_sv,
+                                                        command=__rb_action_callback)
             self.categories_rb[rb_idx].grid(row=0, column=len(self.categories_rb) + 1, sticky='nesw')
 
     def update_texts(self, texts: List[TextInfo]):

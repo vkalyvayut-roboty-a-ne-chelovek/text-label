@@ -11,8 +11,6 @@ def run():
     statechart.run()
     gui.run()
 
-    print(statechart.spy())
-
 
 if __name__ == '__main__':
     run()
