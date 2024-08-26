@@ -40,6 +40,11 @@ class Statechart(ActiveObject):
 
         self.bus.gui.update_categories(self.project.categories)
 
+    def on_remove_category_in_in_project(self, category_id: int):
+        self.project.remove_category(category_id)
+
+        self.bus.gui.update_categories(self.project.categories)
+
     def on_import_text_from_input_in_in_project(self, text: str):
         self.project.add_text(text)
 
@@ -70,6 +75,9 @@ class Statechart(ActiveObject):
 
     def launch_add_category_event(self, category: str):
         self.post_fifo(Event(signal=signals.ADD_CATEGORY, payload=category))
+
+    def launch_remove_category_event(self, category_id: int):
+        self.post_fifo(Event(signal=signals.REMOVE_CATEGORY, payload=category_id))
 
     def launch_import_text_from_input(self, text: str):
         self.post_fifo(Event(signal=signals.IMPORT_TEXT_FROM_INPUT, payload=text))
@@ -123,6 +131,7 @@ def in_project(s: Statechart, e: Event) -> return_status:
         s.on_add_category_in_in_project(e.payload)
     elif e.signal == signals.REMOVE_CATEGORY:
         status = return_status.HANDLED
+        s.on_remove_category_in_in_project(e.payload)
     elif e.signal == signals.IMPORT_TEXT_FROM_INPUT:
         status = return_status.HANDLED
         s.on_import_text_from_input_in_in_project(e.payload)

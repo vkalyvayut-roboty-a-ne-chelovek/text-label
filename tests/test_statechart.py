@@ -211,6 +211,17 @@ class TestStatechart(unittest.TestCase):
 
         self._assert_spy_check(expected_spy, actual_spy)
 
+    def test_remove_category(self):
+        self.statechart.launch_load_project_event(path_to_project=self.path_to_project)
+        time.sleep(0.1)
+        self.statechart.launch_remove_category_event(1)
+        time.sleep(0.1)
+
+        expected_spy = ['START', 'SEARCH_FOR_SUPER_SIGNAL:init', 'ENTRY_SIGNAL:init', 'INIT_SIGNAL:init', '<- Queued:(0) Deferred:(0)', 'LOAD_PROJECT:init', 'SEARCH_FOR_SUPER_SIGNAL:in_project', 'ENTRY_SIGNAL:in_project', 'INIT_SIGNAL:in_project', '<- Queued:(0) Deferred:(0)', 'REMOVE_CATEGORY:in_project', 'REMOVE_CATEGORY:in_project:HOOK', '<- Queued:(0) Deferred:(0)']
+        actual_spy = self.statechart.spy()
+
+        self._assert_spy_check(expected_spy, actual_spy)
+
 
 if __name__ == '__main__':
     unittest.main()

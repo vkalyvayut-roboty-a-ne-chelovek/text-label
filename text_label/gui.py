@@ -1,6 +1,6 @@
 import copy
 import tkinter
-from tkinter import filedialog, scrolledtext, ttk, font
+from tkinter import filedialog, scrolledtext, ttk, font, messagebox
 from typing import Optional, List
 
 from text_label.bus import Bus
@@ -8,24 +8,32 @@ from text_label.text_info import TextInfo
 
 
 class CategoryWidget(tkinter.Frame):
-    def __init__(self, parent, text: str, value: str, variable, command):
+    def __init__(self, parent, text: str, value: str, variable, command, delete_command):
         super().__init__(parent)
         self.parent = parent
         self.text = text
         self.value = value
         self.variable = variable
         self.command = command
+        self.delete_command = delete_command
 
         self.rb = ttk.Radiobutton(self,
                                   value=copy.copy(value),
                                   text=copy.copy(text),
                                   variable=self.variable,
                                   command=self.command)
+
+        self.delete_btn = tkinter.Button(self, text='X', command=self.on_delete_btn_click)
+
         self.rb.grid(column=0, row=0)
+        self.delete_btn.grid(column=0, row=1)
 
     def invoke(self):
-        print('invoke')
         self.rb.invoke()
+
+    def on_delete_btn_click(self):
+        if messagebox.askokcancel(title='Are you sure?', message=f'Do you really want to delete `{self.text}` category?'):
+            self.delete_command()
 
 
 class Gui:
@@ -164,17 +172,25 @@ class Gui:
         for rb in self.categories_rb.values():
             rb.destroy()
 
+        self.categories_rb = {}
+
         for k, v in self.categories.items():
             rb_idx = copy.copy(k)
 
             def __rb_action_callback():
                 self._mark_text(self.current_text_idx, category_id=int(self.categories_sv.get()))
 
+            def __make_rb_delete_action_callback():
+                category_id = k
+                return lambda: self.bus.statechart.launch_remove_category_event(category_id)
+
             self.categories_rb[rb_idx] = CategoryWidget(self.categories_frame,
                                                         value=copy.copy(str(k)),
                                                         text=f'{v} <KP_{len(self.categories_rb) + 1}>',
                                                         variable=self.categories_sv,
-                                                        command=__rb_action_callback)
+                                                        command=__rb_action_callback,
+                                                        delete_command=__make_rb_delete_action_callback())
+
             self.categories_rb[rb_idx].grid(row=0, column=len(self.categories_rb) + 1, sticky='nesw')
 
     def update_texts(self, texts: List[TextInfo]):
