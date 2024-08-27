@@ -62,8 +62,11 @@ class Project:
         self.data[text_id].category_id = category_id
         self.history.add_state(self._get_snapshot())
 
-    def get_texts(self) -> list[TextInfo]:
-        return self.data
+    def get_texts(self, category_id: Optional[int] = None) -> list[TextInfo]:
+        data = self.data
+        if category_id is not None:
+            data = [text for text in data if text.category_id == category_id]
+        return data
 
     def undo(self):
         self.history.rollback_state()

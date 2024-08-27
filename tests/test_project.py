@@ -82,6 +82,14 @@ class TestProject(unittest.TestCase):
 
         assert project.get_texts() == [TextInfo('text1'), TextInfo('text2'), TextInfo('text3')]
 
+    def test_get_texts_of_category(self):
+        project = Project()
+        path_to_project = pathlib.Path(os.path.dirname(__file__), 'assets', 'test.json.tl')
+        project = Project.load_project_from_path(path_to_project)
+
+        assert len(project.get_texts()) == 3
+        assert len(project.get_texts(0)) == 1
+
     def test_save_project(self):
         path_to_project = pathlib.Path(os.path.dirname(__file__), 'assets', 'test.json.tl')
         project = Project.load_project_from_path(path_to_project)
