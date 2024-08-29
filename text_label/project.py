@@ -1,4 +1,5 @@
 import copy
+import hashlib
 import json
 import pathlib
 from typing import Optional, Union, Tuple
@@ -71,3 +72,6 @@ class Project:
     def undo(self):
         self.history.rollback_state()
         self.categories, self.data = self.history.get_current_state()
+
+    def get_name(self):
+        return str(hashlib.md5(str(self.history).encode('utf-8')).hexdigest())

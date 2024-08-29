@@ -1,6 +1,7 @@
 import os.path
 import pathlib
 from typing import Optional, List
+from tkinter import filedialog
 
 from text_label.bus import Bus
 from text_label.project import Project
@@ -13,8 +14,12 @@ class TextDirectoryExporter:
         if self.bus:
             self.bus.register('exporters[text_directory]', self)
 
-    def show_popup(self):
-        pass
+    def show_options(self):
+        path_to_root_dir = filedialog.askdirectory(initialdir=pathlib.Path(__file__).parent)
+        if path_to_root_dir:
+            project = self.bus.statechart.project
+            path_to_dir = pathlib.Path(path_to_root_dir, project.get_name())
+            self.export(path_to_dir=path_to_dir, project=project)
 
     def export(self, path_to_dir: pathlib.Path, project: Project):
         if self.make_root_dir(path_to_dir):

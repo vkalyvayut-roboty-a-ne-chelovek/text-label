@@ -52,6 +52,7 @@ class Gui:
         self.main_menu = tkinter.Menu()
         self.project_menu = tkinter.Menu(self.main_menu, tearoff=False)
         self.categories_texts_menu = tkinter.Menu(self.main_menu, tearoff=False)
+        self.exports_menu = tkinter.Menu(self.main_menu, tearoff=False)
 
         self.main_frame = tkinter.Frame(self.root, background='yellow')
         self.categories_frame = tkinter.Frame(self.main_frame, background='red')
@@ -92,8 +93,13 @@ class Gui:
         self.categories_texts_menu.add_separator()
         self.categories_texts_menu.add_command(label='Undo', accelerator='Ctrl-z', command=self.bus.statechart.launch_undo_event, state='disabled')
 
+        if self.bus.exporters:
+            for k, v in self.bus.exporters.items():
+                self.exports_menu.add_command(label=k, command=lambda: v.show_options(), state='disabled')
+
         self.main_menu.add_cascade(label='Project', menu=self.project_menu)
         self.main_menu.add_cascade(label='Categories/Texts', menu=self.categories_texts_menu)
+        self.main_menu.add_cascade(label='Export', menu=self.exports_menu)
         self.main_menu.add_command(label='Help')
 
         self.main_frame.grid(row=0, column=0, sticky='nesw')
@@ -165,6 +171,11 @@ class Gui:
         self.categories_texts_menu.entryconfig('Font Size +', state='normal')
         self.categories_texts_menu.entryconfig('Font Size -', state='normal')
         self.categories_texts_menu.entryconfig('Undo', state='normal')
+
+        if self.exports_menu:
+            for entry_idx in range(self.exports_menu.index('end') + 1):
+                self.exports_menu.entryconfig(entry_idx, state='normal')
+
 
     def update_categories(self, categories: dict):
         self.categories = categories
