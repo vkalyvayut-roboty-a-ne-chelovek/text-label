@@ -80,10 +80,8 @@ class Gui:
         self.project_menu.add_command(label='New', accelerator='Ctrl-n', command=self.bus.statechart.launch_new_project_event)
         self.project_menu.add_command(label='Open', accelerator='Ctrl-o', command=self._show_load_project_popup)
         self.project_menu.add_command(label='Save', accelerator='Ctrl-s', command=self._show_save_project_popup, state='disabled')
-        self.project_menu.add_command(label='Export', accelerator='Ctrl-e', command=self._show_export_project_popup, state='disabled')
 
         self.categories_texts_menu.add_command(label='Add Category', accelerator='Ctrl-k', command=self._show_add_category_popup_popup, state='disabled')
-        self.categories_texts_menu.add_command(label='Remove Category', command=self._show_remove_category_popup, state='disabled')
         self.categories_texts_menu.add_separator()
         self.categories_texts_menu.add_command(label='Add Text', accelerator='Ctrl-i', command=self._show_import_text_from_input_popup, state='disabled')
         self.categories_texts_menu.add_command(label='Import Text From File', accelerator='Ctrl-f', command=self._show_import_text_from_file_popup, state='disabled')
@@ -100,7 +98,7 @@ class Gui:
         self.main_menu.add_cascade(label='Project', menu=self.project_menu)
         self.main_menu.add_cascade(label='Categories/Texts', menu=self.categories_texts_menu)
         self.main_menu.add_cascade(label='Export', menu=self.exports_menu)
-        self.main_menu.add_command(label='Help')
+        self.main_menu.add_command(label='Help', command=self._show_help_popup)
 
         self.main_frame.grid(row=0, column=0, sticky='nesw')
         self.main_frame.rowconfigure(0, weight=5)
@@ -119,6 +117,7 @@ class Gui:
 
         self.root.bind('<Control-n>', lambda _: self.bus.statechart.launch_new_project_event())
         self.root.bind('<Control-o>', lambda _: self._show_load_project_popup())
+        self.root.bind('<F1>', lambda _: self._show_help_popup())
 
         self.root.config(menu=self.main_menu)
         self.root.mainloop()
@@ -133,7 +132,6 @@ class Gui:
         self.texts_list.bind('<Double-Button-1>', _on_texts_list_listbox_select_event_cb)
 
         self.root.bind('<Control-s>', lambda _: self._show_save_project_popup())
-        self.root.bind('<Control-e>', lambda _: self._show_export_project_popup())
         self.root.bind('<Control-k>', lambda _: self._show_add_category_popup_popup())
         self.root.bind('<Control-i>', lambda _: self._show_import_text_from_input_popup())
         self.root.bind('<Control-f>', lambda _: self._show_import_text_from_file_popup())
@@ -163,9 +161,7 @@ class Gui:
 
     def enable_menus(self):
         self.project_menu.entryconfig('Save', state='normal')
-        self.project_menu.entryconfig('Export', state='normal')
         self.categories_texts_menu.entryconfig('Add Category', state='normal')
-        self.categories_texts_menu.entryconfig('Remove Category', state='normal')
         self.categories_texts_menu.entryconfig('Add Text', state='normal')
         self.categories_texts_menu.entryconfig('Import Text From File', state='normal')
         self.categories_texts_menu.entryconfig('Font Size +', state='normal')
@@ -287,9 +283,6 @@ class Gui:
         if path_to_project := filedialog.asksaveasfilename(filetypes=[('Project', '.json.tl')]):
             self.bus.statechart.launch_save_project_event(path_to_project)
 
-    def _show_export_project_popup(self):
-        pass
-
     def _show_add_category_popup_popup(self):
         def send_event():
             category = input_sv.get().strip()
@@ -325,9 +318,6 @@ class Gui:
         root.bind('<Escape>', lambda _: root.destroy())
 
         root.mainloop()
-
-    def _show_remove_category_popup(self):
-        pass
 
     def _show_import_text_from_input_popup(self):
         root = tkinter.Toplevel()
@@ -366,6 +356,40 @@ class Gui:
         if path_to_file := filedialog.askopenfilename(filetypes=[('Text', '.txt')]):
             self.bus.statechart.launch_import_text_from_file_event(path_to_file)
 
+    @staticmethod
+    def _show_help_popup():
+        root = tkinter.Toplevel()
+        root.title('Help')
+
+        help_text = '''
+<Double-Button-1> - select text from list
+<Control-n> - new (empty) project
+<Control-o> - open existing project
+<Control-s> - save project
+<Control-k> - add category
+<Control-i> - insert text from popup
+<Control-f> - import text from file
+<Control-z> - undo
+<KeyPress-Delete> - delete selected text
+
+<KeyPress-Left>/<KeyPress-Up> - select previous text
+<KeyPress-Right>/<KeyPress-Down> - select next text
+
+<KeyPress-equal>/<Control-KP_Add> - make font larger
+<KeyPress-KP_Subtract>/<Control-minus> - make font smaller
+        '''
+
+        main_frame = tkinter.Frame(root, pady=5, padx=5)
+        text = tkinter.Label(main_frame, text=help_text)
+
+        main_frame.grid(column=0, row=0, sticky='nesw')
+        text.grid(column=0, row=0, sticky='nesw')
+
+        root.grab_set()
+        root.bind('<Escape>', lambda _: root.destroy())
+
+        root.mainloop()
+
 class TestableGui(Gui):
     def __init__(self, bus: Bus):
         self.bus = bus
@@ -392,13 +416,8 @@ class TestableGui(Gui):
     def _show_save_project_popup(self):
         pass
 
-    def _show_export_project_popup(self):
-        pass
 
     def _show_add_category_popup_popup(self):
-        pass
-
-    def _show_remove_category_popup(self):
         pass
 
     def _show_import_text_from_input_popup(self):
