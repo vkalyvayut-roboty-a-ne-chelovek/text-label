@@ -1,0 +1,19 @@
+[project]
+name = "simple-text-label"
+version = "0.0.1.1"
+authors = [
+    { name="vkalyvayut-roboty-a-ne-chelovek" }
+]
+description = "Simple Python Tkinter text labelling app for ML purposes"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies=[
+    "miros",
+]
+
+[project.scripts]
+simple-image-label="text_label.main:run"
+
+[project.urls]
+Homepage = "https://github.com/vkalyvayut-roboty-a-ne-chelovek/text-label"
+Issues = "https://github.com/vkalyvayut-roboty-a-ne-chelovek/text-label/issues"
